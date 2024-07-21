@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()  # env
-git_enc_token = os.getenv("GIT_TOKEN")
-git_token = base64.b64decode(git_enc_token.encode('utf-8')).decode('utf-8')
-print("Декодированный токен:", git_token)
+git_token = os.getenv("GIT_TOKEN")
+#git_token = base64.b64decode(git_enc_token.encode('utf-8')).decode('utf-8')
+#print("Декодированный токен:", git_token)
 
 def is_file_changed_locally():
     # Инициализация объекта GitHub с использованием персонального токена
