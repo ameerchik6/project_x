@@ -24,7 +24,7 @@ from background import keep_alive
 from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeChat
 
 # keep_alive()
-
+print("START STATTG")
 
 # app = Flask(__name__)
 
@@ -46,7 +46,7 @@ from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeCha
 
 
 # keep_alive()
-print("Server Running Because of Axo")
+# print("Server Running Because of Axo")
 load_dotenv()  # env
 token = os.getenv("BOT_TOKEN")
 dev = int(os.getenv("DEVELOPER_CHAT_ID"))

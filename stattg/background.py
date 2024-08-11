@@ -16,6 +16,7 @@ git_token = os.getenv("GIT_TOKEN")
 #print("Декодированный токен:", git_token)
 
 def is_file_changed_locally():
+    print("Проверяю users db")
     # Инициализация объекта GitHub с использованием персонального токена
     g = Github(git_token)
     
@@ -35,8 +36,10 @@ def is_file_changed_locally():
     
     # Сравниваем MD5
     if local_content_md5 != github_content_md5:
+        print("true")
         return True
     else:
+        print("false")
         return False
 
 
@@ -97,6 +100,89 @@ def upload_file_to_github():
         pass
 
 
+def is_file_changed_locally_FAM():
+    print("Проверяю hamster FAM")
+    # Инициализация объекта GitHub с использованием персонального токена
+    g = Github(git_token)
+    
+    # Получаем репозиторий
+    repo = g.get_user().get_repo('hamster_fam_db')
+    
+    # Получаем содержимое файла game_keys.db с GitHub
+    contents = repo.get_contents('game_keys.db')
+    
+    # Получаем MD5 текущего содержимого на GitHub
+    github_content_md5 = hashlib.md5(contents.decoded_content).hexdigest()
+    
+    # Читаем локальный файл и вычисляем его MD5
+    with open('game_keys.db', 'rb') as file:
+        local_content = file.read()
+        local_content_md5 = hashlib.md5(local_content).hexdigest()
+    
+    # Сравниваем MD5
+    if local_content_md5 != github_content_md5:
+        return True
+    else:
+        return False
+
+
+
+
+def download_file_from_github_FAM():
+    try:
+        if is_file_changed_locally_FAM():
+            # Инициализация объекта GitHub с использованием персонального токена
+            g = Github(git_token)
+            
+            # Получаем репозиторий
+            repo = g.get_user().get_repo('hamster_fam_db')
+            
+            # Получаем содержимое файла game_keys.db
+            contents = repo.get_contents('game_keys.db')
+            
+            # Скачиваем файл
+            with open('game_keys.db', 'wb') as file:
+                file.write(contents.decoded_content)
+                print('File downloaded successfully.')
+        else:
+            pass
+    except Exception as e:
+        if "No such file or directory: 'game_keys.db'" in str(e):
+            g = Github(git_token)
+            
+            # Получаем репозиторий
+            repo = g.get_user().get_repo('hamster_fam_db')
+            
+            # Получаем содержимое файла game_keys.db
+            contents = repo.get_contents('game_keys.db')
+            
+            # Скачиваем файл
+            with open('game_keys.db', 'wb') as file:
+                file.write(contents.decoded_content)
+                print('File downloaded successfully.')
+
+def upload_file_to_github_FAM():
+    if is_file_changed_locally_FAM():
+        # Инициализация объекта GitHub с использованием персонального токена
+        g = Github(git_token)
+        
+        # Получаем репозиторий
+        repo = g.get_user().get_repo('hamster_fam_db')
+        
+        # Читаем локальный файл game_keys.db
+        with open('game_keys.db', 'rb') as file:
+            content = file.read()
+        
+        # Получаем содержимое файла game_keys.db на GitHub
+        contents = repo.get_contents('game_keys.db')
+        
+        # Обновляем файл на GitHub
+        repo.update_file(contents.path, "Updated successfully", content, contents.sha)
+        print('File updated successfully.')
+    else:
+        pass
+
+
 
 
 
@@ -116,12 +202,16 @@ def print_hello():
         time.sleep(40)
         upload_file_to_github()
         download_file_from_github()
+        upload_file_to_github_FAM()
+        download_file_from_github_FAM()
+
         
           # Подождать 60 секунд (1 минута)
 
 def keep_alive():
     # Запускаем Flask приложение в отдельном потоке
     download_file_from_github()
+    download_file_from_github_FAM()
     flask_thread = Thread(target=run)
     flask_thread.start()
 

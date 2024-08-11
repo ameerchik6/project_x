@@ -1,13 +1,13 @@
 # import subprocess
-# from stattg.background import keep_alive
+from stattg.background import keep_alive
 
 
-# keep_alive()
+keep_alive()
 # print("Запускаю проекты!")
 # # Пути к вашим скриптам
 project_1 = "stattg/main.py"
 project_2 = "hamster/bot.py"
-# # project_3 = "path/to/project_3.py"
+project_3 = "hamster_fam/bot.py"
 
 # # Запуск проектов
 # processes = []
@@ -41,9 +41,12 @@ def run_script(script_name):
 # Запуск файлов в отдельных потоках
 thread1 = threading.Thread(target=run_script, args=(project_1,))
 thread2 = threading.Thread(target=run_script, args=(project_2,))
+thread3 = threading.Thread(target=run_script, args=(project_3,))
 
 thread1.start()
 thread2.start()
+thread3.start()
 
 thread1.join()
 thread2.join()
+thread3.join()

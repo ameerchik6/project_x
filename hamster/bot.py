@@ -4,7 +4,7 @@ from config import TOKENS
 from strings import DELIMITER
 from hamster_client import send_tg
 
-
+print("HAMSTER")
 
    
 clients = [HamsterClient(**options) for options in TOKENS]
