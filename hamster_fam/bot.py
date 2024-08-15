@@ -739,6 +739,9 @@ async def main(proxy):
 # async def bot_main():
 
 if __name__ == "__main__":
+    import datetime
+    now = datetime.datetime.now()
+    print("Текущее время: ", now.strftime("%H:%M:%S"))
     setup_database()
     # proxy_file = input("Enter the proxy file path (leave empty to use 'proxy.txt'): ") or 'proxy.txt'
     # proxy_file = "proxy.txt"
