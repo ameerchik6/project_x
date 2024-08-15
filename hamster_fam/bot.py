@@ -552,6 +552,15 @@ async def ask_for_game(message: types.Message):
 @dp.callback_query(lambda c: c.data.startswith("choose_game_"))
 async def choose_game(callback_query: types.CallbackQuery):
     game_name = callback_query.data[len("choose_game_"):]
+    game_available_keys = get_key_statistics()[game_name]['count']
+    # print(game_available_keys)
+    if game_available_keys <= 4:
+        await bot.edit_message_text(
+                text=f"Ключи для {game_name} закончились.",
+                chat_id=callback_query.message.chat.id,
+                message_id=callback_query.message.message_id
+            )
+        return
     chosen_game[callback_query.from_user.id] = game_name
     user_id = callback_query.from_user.id
     # Проверяем количество доступных ключей для выбранной игры
@@ -564,12 +573,12 @@ async def choose_game(callback_query: types.CallbackQuery):
     ''', (game_name, user_id,))
     available_keys = cursor.fetchone()
     conn.close()
-    print(f"{available_keys}\n{user_id}")
+    # print(f"{available_keys}\n{user_id}")
     if available_keys == None:
         available_keys = 4
     else:
         available_keys = abs(available_keys[0] - 4)
-    print(available_keys)
+    # print(available_keys)
     # ####Устанавливаем максимальное количество ключей на пользователя
     if available_keys == 0:
         await bot.edit_message_text(
@@ -620,13 +629,14 @@ async def choose_quantity(callback_query: types.CallbackQuery):
                 keys_to_send.append(f"`{key}`")
                 keys_sent += 1
             else:
-                await bot.edit_message_text(
-                    message_id=callback_query.message.message_id,
-                    chat_id=callback_query.message.chat.id,
-                    text=f"Ключи для {game_name} закончились.",
-                    parse_mode="MarkdownV2"
-                )
-                break
+                if keys_to_send==0:
+                    await bot.edit_message_text(
+                        message_id=callback_query.message.message_id,
+                        chat_id=callback_query.message.chat.id,
+                        text=f"Ключи для {game_name} закончились.",
+                        # parse_mode="MarkdownV2"
+                    )
+                    break
         
         if keys_to_send:
             keys_message = f"Ваши {quantity} ключа для **{game_name}**:\n\n" + "\n".join(keys_to_send)
@@ -661,6 +671,7 @@ async def choose_quantity(callback_query: types.CallbackQuery):
 @dp.message(lambda msg: msg.text == "Количество ключей")
 async def keys_for_game(message: types.Message):
     games = get_key_statistics()
+    # print(games['Merge Away']['count'])
     text = ""
     msggg = ""
     try:   
