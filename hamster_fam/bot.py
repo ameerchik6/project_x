@@ -3,7 +3,7 @@ import logging
 import asyncio
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, BotCommand, BotCommandScopeDefault, BotCommandScopeChat
 from httpx import AsyncClient
 import uuid
 import random
@@ -230,6 +230,13 @@ def setup_database():
     conn.commit()
 
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS allowed_users (
+            id INTEGER NOT NULL
+        )
+    ''')
+    conn.commit()
+
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS reset_info (
             last_reset_date DATE NOT NULL
         )
@@ -328,6 +335,18 @@ async def reset_daily_limits():
     today = datetime.date.today()
     update_last_reset_date(today)
 
+def reset_user_limits(user_id):
+    # Ваш код для сброса лимитов здесь
+    try:
+        conn = sqlite3.connect('game_keys.db')
+        cursor = conn.cursor()
+        # Обновляем значение keys_given на 0 для всех записей
+        cursor.execute(f'UPDATE user_limits SET keys_given = 0 WHERE user_id = {user_id}')
+        conn.commit()
+        conn.close()
+        return f"Успешно убраны лимиты ID {user_id}."
+    except:
+        return f"Произошла ошибка при убирании лимитов ID {user_id}."
 
 async def schedule_daily_reset():
     while True:
@@ -344,6 +363,101 @@ async def schedule_daily_reset():
         # Рассчитываем количество секунд до следующего сброса
         seconds_until_reset = (next_reset - now).total_seconds()
         await asyncio.sleep(seconds_until_reset)
+
+def check_allowed(user_id):
+    """
+    Проверяет наличие user_id в таблице allowed_users в базе данных.
+
+    :param db_path: Путь к файлу базы данных SQLite.
+    :param user_id: ID пользователя, который нужно проверить.
+    :return: 1, если ID найден в таблице; 0, если нет.
+    """
+    try:
+        # Устанавливаем соединение с базой данных
+        conn = sqlite3.connect("game_keys.db")
+        cursor = conn.cursor()
+        
+        # Выполняем SQL-запрос для проверки наличия ID
+        cursor.execute("SELECT COUNT(*) FROM allowed_users WHERE id = ?", (user_id,))
+        
+        # Получаем результат запроса
+        count = cursor.fetchone()[0]
+        
+        # Закрываем соединение с базой данных
+        conn.close()
+        
+        # Возвращаем 1, если ID найден, и 0, если не найден
+        return 1 if count > 0 else 0
+        
+    except sqlite3.Error as e:
+        return 0
+
+
+def add_allowed(user_id):
+    """
+    Добавляет user_id в таблицу allowed_users в базе данных, если он еще не существует.
+
+    :param user_id: ID пользователя, который нужно добавить.
+    :return: 1, если ID успешно добавлен; 0, если ID уже существует или произошла ошибка.
+    """
+    try:
+        # Устанавливаем соединение с базой данных
+        conn = sqlite3.connect("game_keys.db")
+        cursor = conn.cursor()
+        
+        # Проверяем, существует ли уже ID
+        cursor.execute("SELECT COUNT(*) FROM allowed_users WHERE id = ?", (user_id,))
+        count = cursor.fetchone()[0]
+        
+        if count > 0:
+            conn.close()
+            return f"ID {user_id} уже существует в базе разрешенных."
+        
+        # Выполняем SQL-запрос для добавления ID
+        cursor.execute("INSERT INTO allowed_users (id) VALUES (?)", (user_id,))
+        
+        # Сохраняем изменения
+        conn.commit()
+        
+        # Закрываем соединение с базой данных
+        conn.close()
+        
+        return f"ID {user_id} успешно добавлено в базу разрешенных."  # ID успешно добавлен
+        
+    except sqlite3.Error as e:
+        return f"Ошибка при работе с базой данных: {e}"
+
+
+def remove_allowed(user_id):
+    """
+    Удаляет user_id из таблицы allowed_users в базе данных.
+
+    :param user_id: ID пользователя, который нужно удалить.
+    :return: 1, если ID успешно удален; 0, если ID не найден или произошла ошибка.
+    """
+    try:
+        # Устанавливаем соединение с базой данных
+        conn = sqlite3.connect("game_keys.db")
+        cursor = conn.cursor()
+        
+        # Выполняем SQL-запрос для удаления ID
+        cursor.execute("DELETE FROM allowed_users WHERE id = ?", (user_id,))
+        
+        # Проверяем, было ли удаление успешным
+        if cursor.rowcount > 0:
+            # Сохраняем изменения
+            conn.commit()
+            result = f"ID {user_id} успешно удалено в базе разрешенных."  # ID успешно удален
+        else:
+            result = f"ID {user_id} не существует в базе разрешенных."  # ID не найден
+        
+        # Закрываем соединение с базой данных
+        conn.close()
+        
+        return result
+        
+    except sqlite3.Error as e:
+        return f"Ошибка при работе с базой данных: {e}"
 
 
 
@@ -505,9 +619,49 @@ async def generate_keys_for_game(game_choice, proxy):
             logging.error(f"No key was generated for {game_name}.")
         await asyncio.sleep(EVENTS_DELAY * (random.random() / 3 + 1))
 
+async def set_commands(
+        bot: Bot,
+        user_id,
+        admins = [dev]
+) -> None:
+    commands = [
+        BotCommand(
+            command="start",
+            description="Перезапустить бота!"
+        ),
+    ]
+    await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
+    await bot.set_my_commands(commands=commands, scope=BotCommandScopeChat(chat_id=user_id))
+    for admin in admins:
+        commands.append(
+            BotCommand(
+                command="users",
+                description="Получить список пользователей"
+            )
+        )
+        commands.append(
+            BotCommand(
+                command="/reset_limits",
+                description="Сбрасывает лимиты пользователю по ID"
+            )
+        )
+        commands.append(
+            BotCommand(
+                command="/add_allowed",
+                description="Добавляет пользователя в базу разрешенных по ID"
+            )
+        )
+        commands.append(
+            BotCommand(
+                command="/remove_allowed",
+                description="Убирает пользователя из базы разрешенных по ID"
+            )
+        )
+        await bot.set_my_commands(commands=commands, scope=BotCommandScopeChat(chat_id=admin))
 
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
+    await set_commands(bot, user_id=message.from_user.id)
     static_keyboard = ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="Получить ключ")],[KeyboardButton(text="Количество ключей")]],
         resize_keyboard=True
@@ -526,136 +680,158 @@ async def send_welcome(message: types.Message):
 
 @dp.message(lambda msg: msg.text == "Получить ключ")
 async def ask_for_game(message: types.Message):
-    games = fetch_games()
-    if games:
-        game_keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text=game, callback_data=f"choose_game_{game}")] for game in games
-            ]
-        )
+    # print(message.from_user.id)
+    if check_allowed(message.from_user.id) != 1:
         await message.answer(
-            text="Выберите игру:",
-            reply_markup=game_keyboard
-        )
-        await message.delete()
+                text="У вас нету разрешения получить ключ, чтобы получить разрешение напишите разработчику боту @ameerchik6\n\nYou do not have permission to receive a key, to get permission write to the developer bot @ameerchik6\n\nSizda kalit olishga ruxsat yo'q, ruxsat olish uchun bot egasi @ameerchik6 ga yozing."
+            )
     else:
-        await message.answer(
-            text="Нет доступных игр."
-        )
-    try:
-        username = f"{message.from_user.username}" if message.from_user.username is None else f"@{message.from_user.username}"
-        insert_or_update_user(
-            message.from_user.id, message.from_user.full_name, f"{username}")
-    except Exception as e:
-        print(f"{message.from_user.id}, {message.from_user.full_name}, {message.from_user.username}\n\n{e}")
-        await message.bot.send_message(chat_id=dev, text="Ошибка в базе данных при добавлении!")
+        games = fetch_games()
+        if games:
+            game_keyboard = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text=game, callback_data=f"choose_game_{game}")] for game in games
+                ]
+            )
+            await message.answer(
+                text="Выберите игру:",
+                reply_markup=game_keyboard
+            )
+            await message.delete()
+        else:
+            await message.answer(
+                text="Нет доступных игр."
+            )
+        try:
+            username = f"{message.from_user.username}" if message.from_user.username is None else f"@{message.from_user.username}"
+            insert_or_update_user(
+                message.from_user.id, message.from_user.full_name, f"{username}")
+        except Exception as e:
+            print(f"{message.from_user.id}, {message.from_user.full_name}, {message.from_user.username}\n\n{e}")
+            await message.bot.send_message(chat_id=dev, text="Ошибка в базе данных при добавлении!")
 
 @dp.callback_query(lambda c: c.data.startswith("choose_game_"))
 async def choose_game(callback_query: types.CallbackQuery):
-    game_name = callback_query.data[len("choose_game_"):]
-    game_available_keys = get_key_statistics()[game_name]['count']
-    # print(game_available_keys)
-    if game_available_keys <= 4:
+    if check_allowed(callback_query.from_user.id) != 1:
         await bot.edit_message_text(
-                text=f"Ключи для {game_name} закончились.",
+                message_id=callback_query.message.message_id,
+                chat_id=callback_query.message.chat.id,
+                text="У вас нету разрешения получить ключ, чтобы получить разрешение напишите разработчику боту @ameerchik6\n\nYou do not have permission to receive a key, to get permission write to the developer bot @ameerchik6\n\nSizda kalit olishga ruxsat yo'q, ruxsat olish uchun bot egasi @ameerchik6 ga yozing.",
+                reply_markup=None
+            )
+    else:
+        game_name = callback_query.data[len("choose_game_"):]
+        game_available_keys = get_key_statistics().get(game_name, {}).get('count', 0)
+        # print(game_available_keys)
+        if game_available_keys <= 4:
+            await bot.edit_message_text(
+                    text=f"Ключи для {game_name} закончились.",
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.message_id
+                )
+            return
+        chosen_game[callback_query.from_user.id] = game_name
+        user_id = callback_query.from_user.id
+        # Проверяем количество доступных ключей для выбранной игры
+        conn = sqlite3.connect('game_keys.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT keys_given
+            FROM user_limits
+            WHERE game_name = ? AND user_id = ?
+        ''', (game_name, user_id,))
+        available_keys = cursor.fetchone()
+        conn.close()
+        # print(f"{available_keys}\n{user_id}")
+        if available_keys == None:
+            available_keys = 4
+        else:
+            available_keys = abs(available_keys[0] - 4)
+        # print(available_keys)
+        # ####Устанавливаем максимальное количество ключей на пользователя
+        if available_keys == 0:
+            await bot.edit_message_text(
+                text=f"Вы превысили лимит ключей {game_name} на сегодня, приходите завтра!",
                 chat_id=callback_query.message.chat.id,
                 message_id=callback_query.message.message_id
             )
-        return
-    chosen_game[callback_query.from_user.id] = game_name
-    user_id = callback_query.from_user.id
-    # Проверяем количество доступных ключей для выбранной игры
-    conn = sqlite3.connect('game_keys.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT keys_given
-        FROM user_limits
-        WHERE game_name = ? AND user_id = ?
-    ''', (game_name, user_id,))
-    available_keys = cursor.fetchone()
-    conn.close()
-    # print(f"{available_keys}\n{user_id}")
-    if available_keys == None:
-        available_keys = 4
-    else:
-        available_keys = abs(available_keys[0] - 4)
-    # print(available_keys)
-    # ####Устанавливаем максимальное количество ключей на пользователя
-    if available_keys == 0:
-        await bot.edit_message_text(
-            text=f"Вы превысили лимит ключей {game_name} на сегодня, приходите завтра!",
-            chat_id=callback_query.message.chat.id,
-            message_id=callback_query.message.message_id
+            return
+        # elif available_keys ==
+        
+        quantity_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=str(i), callback_data=f"choose_quantity_{i}") for i in range(1, available_keys+1)]
+            ]
         )
-        return
-    # elif available_keys ==
-    
-    quantity_keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=str(i), callback_data=f"choose_quantity_{i}") for i in range(1, available_keys+1)]
-        ]
-    )
-    
-    await bot.edit_message_text(
-        text=f"Вы выбрали {game_name}. Выберите количество ключей:",
-        chat_id=callback_query.message.chat.id,
-        message_id=callback_query.message.message_id,
-        reply_markup=quantity_keyboard
-    )
+        
+        await bot.edit_message_text(
+            text=f"Вы выбрали {game_name}. Выберите количество ключей:",
+            chat_id=callback_query.message.chat.id,
+            message_id=callback_query.message.message_id,
+            reply_markup=quantity_keyboard
+        )
 
 @dp.callback_query(lambda c: c.data.startswith("choose_quantity_"))
 async def choose_quantity(callback_query: types.CallbackQuery):
-    user_id = callback_query.from_user.id
-    quantity = int(callback_query.data[len("choose_quantity_"):])
-    game_name = chosen_game.get(user_id)
-    
-    if game_name:
-        # Проверяем лимиты
-        if not check_and_update_user_limit(user_id, game_name, quantity):
-            await bot.edit_message_text(
+    if check_allowed(callback_query.from_user.id) != 1:
+        await bot.edit_message_text(
                 message_id=callback_query.message.message_id,
                 chat_id=callback_query.message.chat.id,
-                text="Вы превысили лимит ключей на сегодня.",
+                text="У вас нету разрешения получить ключ, чтобы получить разрешение напишите разработчику боту @ameerchik6\n\nYou do not have permission to receive a key, to get permission write to the developer bot @ameerchik6\n\nSizda kalit olishga ruxsat yo'q, ruxsat olish uchun bot egasi @ameerchik6 ga yozing.",
                 reply_markup=None
             )
-            return
-        
-        keys_sent = 0
-        keys_to_send = []
-        
-        while keys_sent < quantity:
-            key = fetch_key_from_db(game_name)
-            if key:
-                delete_key_from_db(game_name, key)
-                keys_to_send.append(f"`{key}`")
-                keys_sent += 1
-            else:
-                if keys_to_send==0:
-                    await bot.edit_message_text(
-                        message_id=callback_query.message.message_id,
-                        chat_id=callback_query.message.chat.id,
-                        text=f"Ключи для {game_name} закончились.",
-                        # parse_mode="MarkdownV2"
-                    )
-                    break
-        
-        if keys_to_send:
-            keys_message = f"Ваши {quantity} ключа для **{game_name}**:\n\n" + "\n".join(keys_to_send)
-            await bot.edit_message_text(
-                message_id=callback_query.message.message_id,
-                chat_id=callback_query.message.chat.id,
-                text=keys_message,
-                parse_mode="MarkdownV2"
-            )
-        
-        chosen_game.pop(user_id, None)
-        chosen_quantity.pop(user_id, None)
     else:
-        await bot.send_message(
-            chat_id=callback_query.message.chat.id,
-            text="Произошла ошибка при выборе игры.",
-            reply_markup=None
-        )
+        user_id = callback_query.from_user.id
+        quantity = int(callback_query.data[len("choose_quantity_"):])
+        game_name = chosen_game.get(user_id)
+        
+        if game_name:
+            # Проверяем лимиты
+            if not check_and_update_user_limit(user_id, game_name, quantity):
+                await bot.edit_message_text(
+                    message_id=callback_query.message.message_id,
+                    chat_id=callback_query.message.chat.id,
+                    text="Вы превысили лимит ключей на сегодня.",
+                    reply_markup=None
+                )
+                return
+            
+            keys_sent = 0
+            keys_to_send = []
+            
+            while keys_sent < quantity:
+                key = fetch_key_from_db(game_name)
+                if key:
+                    delete_key_from_db(game_name, key)
+                    keys_to_send.append(f"`{key}`")
+                    keys_sent += 1
+                else:
+                    if keys_to_send==0:
+                        await bot.edit_message_text(
+                            message_id=callback_query.message.message_id,
+                            chat_id=callback_query.message.chat.id,
+                            text=f"Ключи для {game_name} закончились.",
+                            # parse_mode="MarkdownV2"
+                        )
+                        break
+            
+            if keys_to_send:
+                keys_message = f"Ваши {quantity} ключа для **{game_name}**:\n\n" + "\n".join(keys_to_send)
+                await bot.edit_message_text(
+                    message_id=callback_query.message.message_id,
+                    chat_id=callback_query.message.chat.id,
+                    text=keys_message,
+                    parse_mode="MarkdownV2"
+                )
+            
+            chosen_game.pop(user_id, None)
+            chosen_quantity.pop(user_id, None)
+        else:
+            await bot.send_message(
+                chat_id=callback_query.message.chat.id,
+                text="Произошла ошибка при выборе игры.",
+                reply_markup=None
+            )
 
 
 
@@ -716,6 +892,55 @@ async def without_puree(message: types.Message):
     else:
         await message.reply("У вас недостаточно прав чтобы выполнить эту команду!")
 
+
+@dp.message(Command("add_allowed"))
+async def add_allowed_user(message: types.Message):
+    if message.from_user.id == dev:
+        msg = message.text
+        id = msg.replace("/add_allowed ", "")
+        id = msg.replace("/add_allowed", "")
+        id = id.replace(" ", "")
+        if id == "":
+            await message.answer("Нельзя разрешать пустому айди")
+        else:
+            try:
+                text = add_allowed(id)
+                await message.answer(f"{text}")
+            except:
+                print("ошибка при разрешении")
+            
+
+@dp.message(Command("remove_allowed"))
+async def remove_allowed_user(message: types.Message):
+    if message.from_user.id == dev:
+        msg = message.text
+        id = msg.replace("/remove_allowed ", "")
+        id = msg.replace("/remove_allowed", "")
+        id = id.replace(" ", "")
+        if id == "":
+            await message.answer("Нельзя убрать разрешение пустому айди")
+        else:
+            try:
+                text = remove_allowed(id)
+                await message.answer(f"{text}")
+            except:
+                print("ошибка при убирании разрешении")
+
+@dp.message(Command("reset_limits"))
+async def reset_limits_user(message: types.Message):
+    if message.from_user.id == dev:
+        msg = message.text
+        id = msg.replace("/reset_limits ", "")
+        id = msg.replace("/reset_limits", "")
+        id = id.replace(" ", "")
+        if id == "":
+            await message.answer("Нельзя сбрасывать лимиты пустому айди")
+        else:
+            try:
+                text = reset_user_limits(id)
+                await message.answer(f"{text}")
+            except:
+                print("ошибка при разрешении")
             
 
 async def load_proxy(file_path):
