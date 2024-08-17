@@ -968,7 +968,7 @@ if __name__ == "__main__":
     import datetime
     now = datetime.datetime.now()
     print("Текущее время: ", now.strftime("%H:%M:%S"))
-    
+    setup_database()
     # proxy_file = input("Enter the proxy file path (leave empty to use 'proxy.txt'): ") or 'proxy.txt'
     # proxy_file = "proxy.txt"
     proxy_file = ""
@@ -976,5 +976,5 @@ if __name__ == "__main__":
 
     logging.info(f"Generating keys for all games using proxy from {proxy_file if proxy else 'no proxy'}")
     asyncio.run(main(proxy))
-    setup_database()
+    
     # asyncio.run(bot_main())
