@@ -201,9 +201,9 @@ def print_hello():
     while True:
         time.sleep(40)
         upload_file_to_github()
-        download_file_from_github()
+        #download_file_from_github()
         upload_file_to_github_FAM()
-        download_file_from_github_FAM()
+        #download_file_from_github_FAM()
 
         
           # Подождать 60 секунд (1 минута)
