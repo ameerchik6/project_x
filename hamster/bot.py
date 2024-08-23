@@ -23,7 +23,7 @@ def main():
             print(DELIMITER)
             send_tg(DELIMITER_TG1)
             client.sync()
-            client.claim_daily_cipher()
+            #client.claim_daily_cipher()
             client.tap()
             client.buy_upgrades()
             client.upgrdades_list()
