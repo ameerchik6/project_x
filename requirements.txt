@@ -9,3 +9,4 @@ brotli
 flask
 httpx
 loguru
+colorlog
