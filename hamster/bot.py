@@ -1306,10 +1306,10 @@ class HamsterKombatAccount:
         log.info(
             f"[{self.account_name}] Account Balance Coins: {number_to_string(self.balanceCoins)}, Available Taps: {self.availableTaps}, Max Taps: {self.maxTaps}, Total Keys: {self.totalKeys}, Balance Keys: {self.balanceKeys}"
         )
-        self.SendTelegramLog(
-            f"[{self.account_name}] Баланс: {number_to_string(self.balanceCoins)} \nДоступные клики: {self.availableTaps} \nМакс. клики: {self.maxTaps} \nTotal Keys: {self.totalKeys}, Balance Keys: {self.balanceKeys}",
-            "account_info",
-        )
+        #self.SendTelegramLog(
+        #    f"[{self.account_name}] Баланс: {number_to_string(self.balanceCoins)} \nДоступные клики: {self.availableTaps} \nМакс. клики: {self.maxTaps} \nTotal Keys: {self.totalKeys}, Balance Keys: {self.balanceKeys}",
+        #    "account_info",
+        #)
 
         log.info(f"[{self.account_name}] Getting account config data...")
         AccountConfigVersionData = None
