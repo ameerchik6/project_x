@@ -135,5 +135,22 @@ SupportedPromoGames = {
         "eventType": "gt_progress",
         "delay": 30,
         "retry_delay": 30,
-    }
+    },
+    "04ebd6de-69b7-43d1-9c4b-04a6ca3305af": {
+        'name': 'Stone Age',
+        'appToken': '04ebd6de-69b7-43d1-9c4b-04a6ca3305af',
+        'promoId': '04ebd6de-69b7-43d1-9c4b-04a6ca3305af',
+        'timing': 20000 / 1000,
+        'attempts': 20,
+        "userAgent": "UnityPlayer/2020.3.48f1 (UnityWebRequest/1.0, libcurl/7.84.0-DEV)",
+        "x-unity-version": "2020.3.48f1",
+        "clientOrigin": "deviceid",
+        "clientIdType": "7digStr",
+        "clientVersion": "12.4.57",
+        "eventIdType": "uuid",
+        "eventOrigin": "undefined",
+        "eventType": "gt_progress",
+        "delay": 30,
+        "retry_delay": 30,
+    },
 }
