@@ -25,7 +25,7 @@ AccountList = [
             "auto_tap": True,  # Enable auto tap by setting it to True, or set it to False to disable
             "auto_free_tap_boost": True,  # Enable auto free tap boost by setting it to True, or set it to False to disable
             "auto_get_daily_cipher": True,  # Enable auto get daily cipher by setting it to True, or set it to False to disable
-            "auto_get_daily_task": True,  # Enable auto-get daily tasks by setting it to True, or set it to False to disable
+            "auto_get_daily_task": False,  # Enable auto-get daily tasks by setting it to True, or set it to False to disable
             "auto_get_task": True,  # Enable auto get (Youtube/Twitter and ...) task to True, or set it to False to disable
             "auto_finish_mini_game": True,  # Enable auto finish mini game by setting it to True, or set it to False to disable
             "auto_playground_games": True,  # Enable auto playground games by setting it to True, or set it to False to disable
