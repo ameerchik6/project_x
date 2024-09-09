@@ -1773,7 +1773,7 @@ class HamsterKombatAccount:
                 f"[{self.account_name}] Final account balance: {number_to_string(self.balanceCoins)} coins, Your profit per hour is {number_to_string(self.earnPassivePerHour)} (+{number_to_string(self.ProfitPerHour)}), Spent: {number_to_string(self.SpendTokens)}"
             )
             self.SendTelegramLog(
-                f"[{self.account_name}] Final account balance: {number_to_string(self.balanceCoins)} coins, Your profit per hour is {number_to_string(self.earnPassivePerHour)} (+{number_to_string(self.ProfitPerHour)}), Spent: {number_to_string(self.SpendTokens)}",
+                f"[{self.account_name}] Final account balance: {number_to_string(self.balanceCoins)} coins, \nYour profit per hour is {number_to_string(self.earnPassivePerHour)} (+{number_to_string(self.ProfitPerHour)}), \nSpent: {number_to_string(self.SpendTokens)}",
                 "upgrades",
             )
             return
@@ -1854,7 +1854,7 @@ class HamsterKombatAccount:
             f"[{self.account_name}] Final account balance: {number_to_string(self.balanceCoins)} coins, Your profit per hour is {number_to_string(self.earnPassivePerHour)} (+{number_to_string(self.ProfitPerHour)}), Spent: {number_to_string(self.SpendTokens)}"
         )
         self.SendTelegramLog(
-            f"[{self.account_name}] Final account balance: {number_to_string(self.balanceCoins)} coins, Your profit per hour is {number_to_string(self.earnPassivePerHour)} (+{number_to_string(self.ProfitPerHour)}), Spent: {number_to_string(self.SpendTokens)}",
+            f"[{self.account_name}] Final account balance: {number_to_string(self.balanceCoins)} coins, \nYour profit per hour is {number_to_string(self.earnPassivePerHour)} (+{number_to_string(self.ProfitPerHour)}), \nSpent: {number_to_string(self.SpendTokens)}",
             "account_info",
         )
 
