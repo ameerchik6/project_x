@@ -52,7 +52,7 @@ AccountList = [
         "telegram_chat_id": "5527705092",  # String - you can get it from https://t.me/chatIDrobot
     },
     {
-        "account_name": "Основа",  # A custom name for the account (not important, just for logs)
+        "account_name": "твинк!",  # A custom name for the account (not important, just for logs)
         "Authorization": "Bearer 1726112045928B66LNDuSBymrJmMUAlcHJLSJ9DndyVLEJ7BNdQFah8r76ow3LoQf8CVxZ3Y77cze7489177485",  # To get the token, refer to the README.md file
         "UserAgent": "Mozilla/5.0 (Linux; Android 14; 21121210C Build/UKQ1.230917.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/127.0.6533.103 Mobile Safari/537.36",  # Refer to the README.md file to obtain a user agent
         "Proxy": {},  # You can use proxies to avoid getting banned. Use {} for no proxy
@@ -151,7 +151,7 @@ telegramBotLogging = {
         "http_errors": False,  # HTTP errors
         "other_errors": False,  # Other errors
         "daily_cipher": True,  # Daily cipher
-        "daily_task": False,  # Daily task
+        "daily_task": True,  # Daily task
         "upgrades": True,  # Upgrades
     },
 }
