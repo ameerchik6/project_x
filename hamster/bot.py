@@ -63,7 +63,7 @@ async def task():
             memo = await check_withdraw(session)
             print(memo)
 
-            if memo == 106671155:
+            if memo == "106671155":
                 print("skipped")
                 continue
             elif memo == "reset":
