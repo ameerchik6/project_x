@@ -1,75 +1,89 @@
-import requests
+import asyncio
+import aiohttp
 import time
-def check_withdraw():
-    url = 'https://api.hamsterkombatgame.io/interlude/sync'
-    token = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
+import random
 
+TOKEN = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
+
+async def check_withdraw(session):
+    url = 'https://api.hamsterkombatgame.io/interlude/sync'
     headers = {
-        'Authorization': token,
+        'Authorization': TOKEN,
         'Accept': '*/*',
     }
 
-    # Отправляем POST-запрос с пустым телом
-    response = requests.post(url, headers=headers)
+    async with session.post(url, headers=headers) as response:
+        if response.status == 200:
+            try:
+                data = await response.json()
+                return data["interludeUser"]["withdraw"]['info']['Binance']['memo']
+            except:
+                return "reset"
+        else:
+            print('Error:', response.status, await response.text())
+            return None
 
-    if response.status_code == 200:
-        try:
-            data = response.json()
-            return data["interludeUser"]["withdraw"]['info']['Binance']['memo']
-        except:
-            return "reset"
-    else:
-        print('Error:', response.status_code, response.text)
-
-
-def reset_withdraw():
+async def reset_withdraw(session):
     url = 'https://api.hamsterkombatgame.io/interlude/withdraw/reset'
-    token = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
-
     headers = {
-        'Authorization': token,
+        'Authorization': TOKEN,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
 
-    response = requests.post(url, headers=headers, json={})
+    async with session.post(url, headers=headers, json={}) as response:
+        if response.status == 200:
+            print('success reseted')
+        else:
+            print('Error:', response.status, await response.text())
 
-    if response.status_code == 200:
-        # print('Response:', response.json())
-        print('success reseted')
-    else:
-        print('Error:', response.status_code, response.text)
-
-
-
-while True:
-    print(check_withdraw())
-    if check_withdraw() == 106671155:
-        continue
-    elif check_withdraw() == "reset":
-        reset_withdraw()
-
+async def set_default_exchange(session):
     url = 'https://api.hamsterkombatgame.io/interlude/withdraw/set-exchange-as-default'
-    token = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
-
     payload = {
         "id": "Binance",
         "depositAddress": "EQD5mxRgCuRNLxKxeOjG6r14iSroLF5FtomPnet-sgP5xNJb",
         "memo": "106671155"
     }
-
     headers = {
-        'Authorization': token,
+        'Authorization': TOKEN,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
 
-    response = requests.post(url, headers=headers, json=payload)
+    async with session.post(url, headers=headers, json=payload) as response:
+        if response.status == 200:
+            print("success")
+        else:
+            # print('Error:', response.status, await response.text())
+            pass
 
-    if response.status_code == 200:
-        # print('Response:', response.json())
-        print("success")
-    else:
-        print('Error:', response.status_code, response.text)
+async def task():
+    async with aiohttp.ClientSession() as session:
+        while True:
+            memo = await check_withdraw(session)
+            print(memo)
+
+            if memo == 106671155:
+                print("skipped")
+                continue
+            elif memo == "reset":
+                await reset_withdraw(session)
+            else:
+                await reset_withdraw(session)
+
+            await set_default_exchange(session)
+
+            # Случайная задержка между запросами
+            await asyncio.sleep(random.uniform(0.1, 0.5))
+
+async def main():
+    tasks = []
     
+    # Создаем 10 задач, которые будут выполняться параллельно
+    for _ in range(10):
+        tasks.append(asyncio.create_task(task()))
 
+    await asyncio.gather(*tasks)
+
+# Запускаем основной цикл
+asyncio.run(main())
