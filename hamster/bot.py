@@ -1,41 +1,57 @@
-import asyncio
-import aiohttp
-
-async def check_withdraw(session, token):
+import requests
+import time
+def check_withdraw():
     url = 'https://api.hamsterkombatgame.io/interlude/sync'
+    token = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
+
     headers = {
         'Authorization': token,
         'Accept': '*/*',
     }
 
-    async with session.post(url, headers=headers) as response:
-        if response.status == 200:
-            data = await response.json()
-            print('Response:', data["interludeUser"]["withdraw"])
-            try:
-                return data["interludeUser"]["withdraw"]['info']['Binance']['memo']
-            except:
-                return "reset"
-        else:
-            print('Error:', response.status, await response.text())
+    # Отправляем POST-запрос с пустым телом
+    response = requests.post(url, headers=headers)
 
-async def reset_withdraw(session, token):
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            return data["interludeUser"]["withdraw"]['info']['Binance']['memo']
+        except:
+            return "reset"
+    else:
+        print('Error:', response.status_code, response.text)
+
+
+def reset_withdraw():
     url = 'https://api.hamsterkombatgame.io/interlude/withdraw/reset'
+    token = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
+
     headers = {
         'Authorization': token,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
 
-    async with session.post(url, headers=headers, json={}) as response:
-        if response.status == 200:
-            print('Reset success')
-        else:
-            print('Error:', response.status, await response.text())
+    response = requests.post(url, headers=headers, json={})
 
-async def set_exchange_as_default(session, token):
-    reset_withdraw(session, token)
+    if response.status_code == 200:
+        # print('Response:', response.json())
+        print('success reseted')
+    else:
+        print('Error:', response.status_code, response.text)
+
+
+
+while True:
+    print(check_withdraw())
+    if check_withdraw() == 106671155:
+        continue
+    elif check_withdraw() == "reset":
+        reset_withdraw()
+
     url = 'https://api.hamsterkombatgame.io/interlude/withdraw/set-exchange-as-default'
+    token = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
+
     payload = {
         "id": "Binance",
         "depositAddress": "EQD5mxRgCuRNLxKxeOjG6r14iSroLF5FtomPnet-sgP5xNJb",
@@ -48,26 +64,12 @@ async def set_exchange_as_default(session, token):
         'Accept': 'application/json',
     }
 
-    async with session.post(url, headers=headers, json=payload) as response:
-        if response.status == 200:
-            print("Exchange set as default successfully")
-        else:
-            await reset_withdraw(session, token)
-            print('Error:', response.status, await response.text())
+    response = requests.post(url, headers=headers, json=payload)
 
-async def main():
-    token = 'Bearer 1726906759241lJh990fZfFHhdVwQfN6mJ0nFTSsbpHtI34Q6ijfboKdNxG87ZXrBUhuqxgiiSsAk5527705092'
+    if response.status_code == 200:
+        # print('Response:', response.json())
+        print("success")
+    else:
+        print('Error:', response.status_code, response.text)
     
-    async with aiohttp.ClientSession() as session:
-        while True:
-            if check_withdraw(session, token) == 106671155:
-                continue
-            await set_exchange_as_default(session, token)
-            await check_withdraw(session, token)
-            await set_exchange_as_default(session, token)
-            await reset_withdraw(session, token)
-            await set_exchange_as_default(session, token)
-            # await asyncio.sleep(10)  # Задержка между итерациями
 
-if __name__ == '__main__':
-    asyncio.run(main())
