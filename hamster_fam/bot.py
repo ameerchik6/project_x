@@ -17,16 +17,21 @@ headers = {
 }
 
 async def send_request(session):
-    async with session.post(url, headers=headers, json=payload) as response:
-        if response.status == 200:
-            print("success")
-        else:
-            print(f"Error: {response.status}, {await response.text()}")
+    try:
+        async with session.post(url, headers=headers, json=payload) as response:
+            if response.status == 200:
+                print("success")
+            else:
+                print(f"Error: {response.status}, {await response.text()}")
+    except aiohttp.ClientOSError as e:
+        print(f"Сетевая ошибка: {e}")
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
 
 async def run_requests():
     async with aiohttp.ClientSession() as session:
         while True:
-            tasks = [send_request(session) for _ in range(10)]  # Создаём 10 задач без задержек
+            tasks = [send_request(session) for _ in range(10)]  # Создаём 10 задач
             await asyncio.gather(*tasks)  # Выполняем их параллельно
 
 if __name__ == "__main__":
