@@ -10,3 +10,4 @@ flask
 httpx
 loguru
 colorlog
+yandex-music==2.2.0

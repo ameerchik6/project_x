@@ -4,11 +4,14 @@ import json
 from datetime import datetime
 import pytz
 import asyncio
+from aiogram.types import InputMediaPhoto
+from aiogram.utils.markdown import hbold
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
 from aiogram import F
 from aiogram.methods.send_message import SendMessage
+import requests
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -25,6 +28,14 @@ from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeCha
 
 # keep_alive()
 print("START STATTG")
+
+MESSAGE_IDD = 68
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 # app = Flask(__name__)
 
@@ -473,11 +484,103 @@ async def send_random_value(callback: types.CallbackQuery):
     #             parse_mode=ParseMode.MARKDOWN_V2,
     #         )
     await callback.answer()
+    
+    
+YANDEX_TOKEN = "y0__xDelsK4Bxje-AYg4-n-uhMsVp7nu4J6SffhndBjfqyrVHGSYw"
+API_URL = "https://api.mipoh.ru/get_current_track_beta"
+
+
+
+async def fetch_track():
+    while True:
+        try:
+            logger.info("📡 Запрос к API трека...")
+            r = requests.get(API_URL, headers={
+                "accept": "application/json",
+                "ya-token": "y0__xDelsK4Bxje-AYg4-n-uhMsVp7nu4J6SffhndBjfqyrVHGSYw"
+            })
+            r.raise_for_status()
+            data = r.json()
+            logger.info("✅ Ответ от API получен")
+            return data.get("track"), data.get("paused")
+        except Exception as e:
+            logger.error(f"❌ Ошибка API: {e}")
+            logger.info("⏳ Повтор через 3 секунды...")
+            await asyncio.sleep(3)
+
+    
+      
+async def update_existing_message(bot: Bot):
+    track, _ = await fetch_track()
+    if not track:
+        logger.warning("⛔️ Нет трека при старте.")
+        return
+
+    last_track_id = track["track_id"]
+    last_img = track["img"]
+
+    while True:
+        await asyncio.sleep(3)
+        new_track, _ = await fetch_track()
+        if not new_track or new_track["track_id"] == last_track_id:
+            continue
+
+        last_track_id = new_track["track_id"]
+        title = new_track["title"]
+        artist = new_track["artist"]
+        duration = new_track["duration"]
+        img_url = new_track["img"]
+        download_link = new_track["download_link"]
+        duration_fmt = f"{duration // 60}:{duration % 60:02}"
+
+        caption = f'🎵 {hbold(title)}\n👤 {artist}'
+
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text=f"🎧 Скачать ({duration_fmt})",
+            url=download_link
+        )
+        reply_markup = builder.as_markup()
+
+        try:
+            logger.info(f"🔄 Обновление: {title} — {artist}")
+
+            if img_url != last_img:
+                logger.info("🖼 Меняем фото + текст")
+                await bot.edit_message_media(
+                    chat_id=chanel,
+                    message_id=MESSAGE_IDD,
+                    media=InputMediaPhoto(
+                        media=img_url,
+                        caption=caption,
+                        parse_mode=ParseMode.HTML
+                    ),
+                    reply_markup=reply_markup
+                )
+                last_img = img_url
+            else:
+                logger.info("✏ Меняем только текст")
+                await bot.edit_message_caption(
+                    chat_id=chanel,
+                    message_id=MESSAGE_IDD,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup
+                )
+
+        except Exception as e:
+            logger.warning(f"⚠ Ошибка обновления: {e}")
+            break
 
 
 # Запуск процесса поллинга новых апдейтов
 async def main():
+    print("Запуск задачи я музыки")
+    asyncio.create_task(update_existing_message(bot))
+    print("Я музыка запущена, запуска бота.")
     await dp.start_polling(bot)
+    print("Бот запущен.")
+    
 
 if __name__ == "__main__":
     asyncio.run(main())
