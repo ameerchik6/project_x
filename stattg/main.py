@@ -490,19 +490,20 @@ YANDEX_TOKEN = "y0__xDelsK4Bxje-AYg4-n-uhMsVp7nu4J6SffhndBjfqyrVHGSYw"
 API_URL = "https://api.mipoh.ru/get_current_track_beta"
 
 
-
+import aiohttp
 async def fetch_track():
     while True:
         try:
             logger.info("📡 Запрос к API трека...")
-            r = requests.get(API_URL, headers={
-                "accept": "application/json",
-                "ya-token": "y0__xDelsK4Bxje-AYg4-n-uhMsVp7nu4J6SffhndBjfqyrVHGSYw"
-            })
-            r.raise_for_status()
-            data = r.json()
-            logger.info("✅ Ответ от API получен")
-            return data.get("track"), data.get("paused")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(API_URL, headers={
+                    "accept": "application/json",
+                    "ya-token": "y0__xDelsK4Bxje-AYg4-n-uhMsVp7nu4J6SffhndBjfqyrVHGSYw"
+                }) as response:
+                    response.raise_for_status()
+                    data = await response.json()
+                    logger.info("✅ Ответ от API получен")
+                    return data.get("track"), data.get("paused")
         except Exception as e:
             logger.error(f"❌ Ошибка API: {e}")
             logger.info("⏳ Повтор через 3 секунды...")
