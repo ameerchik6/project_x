@@ -533,7 +533,7 @@ async def update_existing_message(bot: Bot):
         download_link = new_track["download_link"]
         duration_fmt = f"{duration // 60}:{duration % 60:02}"
 
-        caption = f'🎵 {hbold(title)}\n👤 {artist}'
+        caption = f'Слушает..\n🎵 {hbold(title)}\n👤 {artist}'
 
         builder = InlineKeyboardBuilder()
         builder.button(
