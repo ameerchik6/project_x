@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 import pytz
 import asyncio
+from random import choice
 from aiogram.types import InputMediaPhoto
 from aiogram.utils.markdown import hbold
 import logging
@@ -534,7 +535,25 @@ async def update_existing_message(bot: Bot):
         download_link = new_track["download_link"]
         duration_fmt = f"{duration // 60}:{duration % 60:02}"
 
-        caption = f'Слушает..\n🎵 {hbold(title)}\n👤 {artist}'
+        quotes = [
+            "📻 Музыка — тоже настроение.",
+            "🔊 Звучит как мысли на повторе...",
+            "🎧 Вибрации в сердце, не в ушах.",
+            "🕯 Момент для души.",
+            "🌙 Пусть играет, пока ты молчишь.",
+            "💫 Трек, который понимает лучше всех.",
+            "🎶 Не просто звук — это чувство.",
+            "🔥 Это не просто трек — это ты.",
+        ]
+
+        quote = choice(quotes)
+        
+        caption = (
+            f'🫧 {hbold("Сейчас в ушах")}...\n\n'
+            f'🎵 {hbold(title)}\n'
+            f'👤 {artist}\n\n'
+            f'{quote}'
+        )
 
         builder = InlineKeyboardBuilder()
         builder.button(
