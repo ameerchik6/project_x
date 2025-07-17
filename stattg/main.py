@@ -605,7 +605,7 @@ async def update_existing_message(bot: Bot):
         caption = (
             f'🫧 <b>Сейчас в ушах</b>...\n\n'
             f'🎵 <code>{hbold(title)}</code>\n'
-            f'👤 <u><i>{artist}</i></u>\n\n'
+            f'👤 <i>{artist}</i>\n\n'
             f'<blockquote>{quote}</blockquote>'
         )
 
