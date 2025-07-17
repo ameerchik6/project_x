@@ -30,7 +30,7 @@ from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeCha
 # keep_alive()
 print("START STATTG")
 
-MESSAGE_IDD = 69
+MESSAGE_IDD = 71
 
 logging.basicConfig(
     level=logging.INFO,
