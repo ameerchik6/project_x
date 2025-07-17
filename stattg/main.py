@@ -488,7 +488,7 @@ async def send_random_value(callback: types.CallbackQuery):
     
     
 YANDEX_TOKEN = "y0__xDelsK4Bxje-AYg4-n-uhMsVp7nu4J6SffhndBjfqyrVHGSYw"
-API_URL = "http://56.228.12.215:8000/get_current_track_beta"
+API_URL = "http://56.228.12.215:8080/get_current_track_beta"
 
 
 import aiohttp
